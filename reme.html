@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title> Reme (pakai wheel.png)</title>
+<style>
+  :root{
+    --bg:#071226; --card:#0b1726; --muted:#a7bbd6; --accent:#1e90ff;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:#e8f4ff}
+  .app{max-width:520px;margin:16px auto;padding:14px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .title{display:flex;gap:12px;align-items:center}
+  .logo{width:46px;height:46px;border-radius:12px;background:#081827;display:flex;align-items:center;justify-content:center;font-weight:800}
+  .h1{font-size:18px;font-weight:800}
+  .balance-switch{display:flex;align-items:center;gap:8px;background:#071427;padding:8px 12px;border-radius:12px;cursor:pointer}
+  .balance-switch img{width:26px;height:26px; image-rendering: pixelated}
+  .panel{background:linear-gradient(180deg,#081226,#071226);border-radius:14px;padding:14px;box-shadow:0 12px 36px rgba(0,0,0,.6)}
+  .boxes{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .box{flex:1;min-height:84px;background:#081425;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800}
+  .box .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .box .value{font-family:monospace;font-size:26px} 
+  .wheel-area{display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center}
+  .wheel-wrap{width:220px;height:220px;position:relative;flex:0 0 220px}
+  .wheel-img{width:100%;height:100%;border-radius:50%;display:block;user-select:none}
+  .wheel-overlay { position:absolute; left:0;top:0;width:100%;height:100%;pointer-events:none;border-radius:50%;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.00) 0%, rgba(10,30,70,0.06) 65%, rgba(8,22,40,0.25) 100%);
+  mix-blend-mode: overlay;
+  }
+  .centerNum{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:monospace;font-size:42px;font-weight:900;pointer-events:none;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.6)}
+  .controls{flex:1;display:flex;flex-direction:column;gap:12px}
+  .spinRow{display:flex;gap:10px}
+  .spinBtn{flex:1;padding:14px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 6px 18px rgba(30,144,255,0.14)}
+  .autoBtn{padding:12px 14px;border-radius:12px;border:0;background:#10b981;color:#041014;font-weight:800;cursor:pointer;display:none}
+  .betRow{display:flex;gap:8px;align-items:center}
+  input[type=number]{flex:1;padding:12px;border-radius:10px;border:0;background:#071425;color:#fff;font-weight:700;font-size:16px}
+  .smallBtn{padding:10px 12px;border-radius:10px;border:0;background:#092033;color:var(--muted);font-weight:800;cursor:pointer}
+  .tabs{display:flex;gap:8px;margin-top:6px}
+  .tab{flex:1;padding:10px;border-radius:10px;text-align:center;background:#071427;color:var(--muted);cursor:pointer;font-weight:800}
+  .tab.active{background:linear-gradient(90deg,#0b2748,#082033);color:#fff}
+  .status{margin-top:10px;min-height:64px;background:rgba(255,255,255,0.02);border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+  .msg{position:relative;font-size:15px;opacity:0;transform:scale(.8);display:inline-block}
+  .msg.show{opacity:1; animation:fadeScale 1.5s cubic-bezier(.2,.8,.2,1) forwards}
+  @keyframes fadeScale{
+  0%{opacity:0; transform:scale(.8)}
+  60%{opacity:1; transform:scale(1.05)}
+  100%{opacity:1; transform:scale(1)}
+  }
+  .history{margin-top:12px;background:#071427;padding:10px;border-radius:10px;max-height:160px;overflow:auto;color:var(--muted);font-size:13px}
+  .history .row{padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.02)}
+  .footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;color:var(--muted);font-size:13px}
+  .pill{background:#061224;padding:6px 8px;border-radius:10px;font-weight:800}
+  @media (max-width:520px){
+    .wheel-wrap{width:200px;height:200px}
+    .centerNum{font-size:34px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="title">
+      <div class="logo">🎯</div>
+      <div>
+        <div class="h1">Reme</div>
+        <div style="font-size:12px;color:var(--muted)">Reme 0 19 28 x3 </div>
+      </div>
+    </div>
+    <div id="balanceSwitch" class="balance-switch">
+      <img id="balIcon" src="wl.png">
+      <div id="balanceLabel" style="font-weight:900">1000 WL</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="boxes">
+      <div class="box">
+        <div class="label">Player</div>
+        <div class="value" id="playerBox">-</div>
+      </div>
+      <div class="box">
+        <div class="label">Taruhan (unit)</div>
+        <div class="value" id="betDisplay">10</div>
+      </div>
+      <div class="box">
+        <div class="label">House</div>
+        <div class="value" id="hostBox">-</div>
+      </div>
+    </div>
+    <div class="wheel-area">
+      <div class="wheel-wrap">
+        <img id="wheelImg" class="wheel-img" src="wheel.png">
+        <div class="wheel-overlay"></div>
+        <div class="centerNum" id="centerNum">-</div>
+      </div>
+      <div class="controls">
+        <div class="spinRow">
+          <button id="spinBtn" class="spinBtn">Taruhan Seru</button>
+          <button id="autoBtn" class="autoBtn">Auto</button>
+        </div>
+        <div class="betRow">
+          <input id="betInput" type="number" min="1" value="10" />
+          <button id="halfBtn" class="smallBtn">½</button>
+          <button id="doubleBtn" class="smallBtn">2×</button>
+        </div>
+        <div class="tabs">
+          <div id="tabManual" class="tab active">Manual</div>
+          <div id="tabAuto" class="tab">Otomatis</div>
+        </div>
+        <div class="status">
+          <div id="msgBox" class="msg">Siap</div>
+        </div>
+      </div>
+    </div>
+    <div class="history" id="history">
+      <div style="color:var(--muted)">Belum ada putaran.</div>
+    </div>
+    <div class="footer">
+      <div class="pill">Special: 0, 19, 28 → x3 (player). House special → host auto-win.</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="font-size:12px;color:var(--muted)">Token fiksi</div>
+        <button id="depositBtn" class="smallBtn">Deposit 1000 WL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const SEGMENTS = 37;
+  const NUMBERS = Array.from({length:SEGMENTS}, (_,i)=>i);
+  const SPECIALS = new Set([0,19,28]);
+  const FADE_DURATION = 1500;
+  const START_BALANCE_WL = 1000;
+  const UNITS = ['WL','DL','BGL'];
+  const CONV = { 'WL':1, 'DL':100, 'BGL':10000 };
+  let currentUnit = 'WL';
+  let balanceWL = Number(localStorage.getItem('balanceWL')) || START_BALANCE_WL;
+  let depositCount = Number(localStorage.getItem('depositCount')) || 0;
+  let lastDepositDay = localStorage.getItem('lastDepositDay') || '';
+  let spinning = false;
+  let autoMode = false;
+  let history = JSON.parse(localStorage.getItem('history')) || [];
+  const wheelImg = document.getElementById('wheelImg');
+  const centerNum = document.getElementById('centerNum');
+  const playerBox = document.getElementById('playerBox');
+  const hostBox = document.getElementById('hostBox');
+  const spinBtn = document.getElementById('spinBtn');
+  const autoBtn = document.getElementById('autoBtn');
+  const betInput = document.getElementById('betInput');
+  const halfBtn = document.getElementById('halfBtn');
+  const doubleBtn = document.getElementById('doubleBtn');
+  const msgBox = document.getElementById('msgBox');
+  const historyEl = document.getElementById('history');
+  const balanceSwitch = document.getElementById('balanceSwitch');
+  const balanceLabel = document.getElementById('balanceLabel');
+  const balIcon = document.getElementById('balIcon');
+  const betDisplay = document.getElementById('betDisplay');
+  const depositBtn = document.getElementById('depositBtn');
+  const tabManual = document.getElementById('tabManual');
+  const tabAuto = document.getElementById('tabAuto');
+  let rot = 0;
+  let angularVelocity = 0;
+
+  function toWL(v,u){ return Math.round(Number(v)*(CONV[u]||1)); }
+  function fromWL(w,u){ return (w/(CONV[u]||1)); }
+
+  function updateBalanceUI(){
+    const display = currentUnit==='WL'
+      ? Math.round(balanceWL/CONV[currentUnit])
+      : (balanceWL/CONV[currentUnit]).toFixed(2);
+    balanceLabel.textContent = `${display} ${currentUnit}`;
+    balIcon.src = `${currentUnit.toLowerCase()}.png`;
+    betDisplay.textContent = Number(betInput.value).toFixed(2);
+  }
+
+  function digitalRoot(n){
+    n = Math.abs(Number(n));
+    if(n===0) return 0;
+    let s = n;
+    while(s>=10) s = String(s).split('').reduce((a,b)=>a+Number(b),0);
+    return s;
+  }
+
+  let msgTimeout=null;
+  function showMessage(t,keep=FADE_DURATION+400){
+    clearTimeout(msgTimeout);
+    msgBox.classList.remove('show');
+    msgBox.style.opacity=0;
+    msgBox.textContent=t;
+    void msgBox.offsetWidth;
+    msgBox.classList.add('show');
+    if(keep>0) msgTimeout=setTimeout(()=>{
+      msgBox.classList.remove('show');
+      msgBox.style.opacity=0;
+    },keep);
+  }
+
+  function animateSpin(initial,onFrame,onComplete){
+    angularVelocity=initial;
+    const friction = 0.992 + Math.random()*0.003;
+    let last=performance.now();
+    let rafId=null;
+    function step(now){
+      const dt=(now-last)/(1000/60);
+      last=now;
+      rot+=angularVelocity*dt;
+      angularVelocity*=Math.pow(friction,dt);
+      onFrame(rot);
+      const normalized = ((-rot+Math.PI/2)%(Math.PI*2)+(Math.PI*2))%(Math.PI*2);
+      const idx = Math.floor((normalized/(Math.PI*2))*SEGMENTS);
+      centerNum.textContent = NUMBERS[idx];
+
+      if(Math.abs(angularVelocity) < 0.0018){
+        const normalized2 = ((-rot+Math.PI/2)%(Math.PI*2)+(Math.PI*2))%(Math.PI*2);
+        let finalIdx = Math.floor((normalized2/(Math.PI*2))*SEGMENTS);
+        finalIdx = (finalIdx + Math.floor(Math.random()*3)) % SEGMENTS;
+        const targetAngle = (Math.PI/2) - (finalIdx+0.5)*((Math.PI*2)/SEGMENTS);
+        let delta = targetAngle - rot;
+        while(delta>Math.PI) delta-=Math.PI*2;
+        while(delta<-Math.PI) delta+=Math.PI*2;
+        const snapStart=performance.now();
+        const snapDur=380;
+        function snapFrame(now2){
+          const t=Math.min(1,(now2-snapStart)/snapDur);
+          const ease=1-Math.pow(1-t,3);
+          const cur=rot+delta*ease;
+          onFrame(cur);
+          const norm3=(( -cur+Math.PI/2)%(Math.PI*2)+(Math.PI*2))%(Math.PI*2);
+          const idx3=Math.floor((norm3/(Math.PI*2))*SEGMENTS);
+          centerNum.textContent=NUMBERS[idx3];
+          if(t<1) rafId=requestAnimationFrame(snapFrame);
+          else {
+            cancelAnimationFrame(rafId);
+            rot=cur;
+            onComplete(NUMBERS[idx3]);
+          }
+        }
+        rafId=requestAnimationFrame(snapFrame);
+        return;
+      }
+      rafId=requestAnimationFrame(step);
+    }
+    rafId=requestAnimationFrame(step);
+    return ()=>cancelAnimationFrame(rafId);
+  }
+
+  function setWheelRotation(rad){
+    const deg=(rad*180/Math.PI)%360;
+    wheelImg.style.transform=`rotate(${deg}deg)`;
+    const overlay=document.querySelector('.wheel-overlay');
+    overlay.style.transform=`rotate(${deg*0.4}deg)`;
+  }
+
+  function spinOnce(){
+    return new Promise(res=>{
+      const initial=0.7+Math.random()*0.6;
+      animateSpin(initial,setWheelRotation,(r)=>res(r));
+    });
+  }
+
+  async function playRound(){
+    if(spinning) return;
+    const betVal=Number(betInput.value);
+    if(!isFinite(betVal)||betVal<=0){ showMessage('Taruhan tidak valid'); return;}
+    const betWL=toWL(betVal,currentUnit);
+    if(betWL>balanceWL){ showMessage('Saldo tidak cukup'); return;}
+    balanceWL-=betWL;
+    localStorage.setItem('balanceWL',balanceWL);
+    updateBalanceUI();
+    autoBtn.style.display='inline-block';
+    spinning=true;
+    const playerNum=await spinOnce();
+    const playerR=digitalRoot(playerNum);
+    playerBox.textContent=playerNum;
+    showMessage(`Player spun wheel and got ${playerNum} (Reme ${playerR})`,FADE_DURATION+400);
+    await new Promise(r=>setTimeout(r,FADE_DURATION+350));
+    const hostNum=await spinOnce();
+    const hostR=digitalRoot(hostNum);
+    hostBox.textContent=hostNum;
+    showMessage(`House got ${hostNum} (Reme ${hostR})`,FADE_DURATION+600);
+    await new Promise(r=>setTimeout(r,FADE_DURATION-200));
+    let payoutWL=0;
+    let reason='';
+    if(SPECIALS.has(hostNum)){
+      reason=`House hit special ${hostNum} — host auto-win.`;
+    }
+    else if(playerR===hostR){
+      reason=`Reme draw (r${playerR}) — house auto-win.`;
+    }
+    else if(SPECIALS.has(playerNum)){
+      payoutWL=betWL*3;
+      reason=`Player special ${playerNum} — x3.`;
+    }
+    else if(playerR>hostR){
+      payoutWL=betWL*2;
+      reason=`Player wins — x2.`;
+    }
+    else {
+      reason=`Player loses.`;
+    }
+    if(payoutWL>0){
+      balanceWL+=payoutWL;
+      showMessage(`${reason} Won ${fromWL(payoutWL,currentUnit)} ${currentUnit}`,2200);
+    } else showMessage(`${reason} Lost`,1600);
+    history.unshift({player:playerNum,playerR,host:hostNum,hostR,betWL,payoutWL,reason,ts:Date.now()});
+    if(history.length>200) history.length=200;
+    localStorage.setItem('history',JSON.stringify(history));
+    renderHistory();
+    updateBalanceUI();
+    spinning=false;
+    if(autoMode){
+      const nextBet=toWL(Number(betInput.value),currentUnit);
+      if(nextBet<=0||nextBet>balanceWL){
+        autoMode=false;
+        updateAutoUI();
+        showMessage('Auto stopped — saldo tidak cukup',2200);
+      } else setTimeout(()=>playRound(),800);
+    }
+  }
+
+  function renderHistory(){
+    if(history.length===0){historyEl.innerHTML=`<div style="color:var(--muted)">Belum ada putaran.</div>`;
+      return;
+    }
+    historyEl.innerHTML=history.slice(0,60).map((h,i)=>`
+      <div class="row">
+        <div style="font-family:monospace;font-weight:800">#${i+1} — player ${h.player} (r${h.playerR}) vs house ${h.host} (r${h.hostR})</div>
+        <div style="color:var(--muted)">bet ${fromWL(h.betWL,currentUnit)} ${currentUnit} — payout ${fromWL(h.payoutWL,currentUnit)} ${currentUnit} — ${h.reason}</div>
+      </div>`).join('');
+  }
+
+  function updateAutoUI(){
+    if(autoMode){ autoBtn.textContent='Stop Auto'; autoBtn.style.background='#ef4444'; }
+    else { autoBtn.textContent='Auto'; autoBtn.style.background='#10b981'; }
+  }
+
+  spinBtn.addEventListener('click',()=>playRound());
+  autoBtn.addEventListener('click',()=>{
+    autoMode=!autoMode;
+    updateAutoUI();
+    if(autoMode&&!spinning){
+      const nextBet=toWL(Number(betInput.value),currentUnit);
+      if(nextBet<=0||nextBet>balanceWL){
+        autoMode=false;updateAutoUI();
+        showMessage('Auto gagal: saldo tidak cukup');
+      } else playRound();
+    }
+  });
+
+  halfBtn.addEventListener('click',()=>{
+    betInput.value=Math.max(1,(Number(betInput.value)/2)).toFixed(2);
+    betDisplay.textContent=Number(betInput.value).toFixed(2);
+  });
+
+  doubleBtn.addEventListener('click',()=>{
+    betInput.value=(Number(betInput.value)*2).toFixed(2);
+    betDisplay.textContent=Number(betInput.value).toFixed(2);
+  });
+
+  balanceSwitch.addEventListener('click',()=>{
+    const idx=UNITS.indexOf(currentUnit);
+    currentUnit=UNITS[(idx+1)%UNITS.length];
+    updateBalanceUI();
+  });
+
+  depositBtn.addEventListener('click',()=>{
+    const today = new Date().toISOString().slice(0,10);
+    if(lastDepositDay!==today){
+      depositCount=0;
+      lastDepositDay=today;
+      localStorage.setItem('lastDepositDay',today);
+    }
+    if(depositCount>=5){
+      showMessage('Deposit harian sudah mencapai 5x',2000);
+      return;
+    }
+    balanceWL += 1000;
+    depositCount++;
+    localStorage.setItem('balanceWL',balanceWL);
+    localStorage.setItem('depositCount',depositCount);
+    showMessage(`Deposit berhasil! Saldo +1000 WL (${depositCount}/5 hari ini)`,2000);
+    updateBalanceUI();
+  });
+
+  tabManual.addEventListener('click',()=>{
+    tabManual.classList.add('active'); tabAuto.classList.remove('active');
+  });
+  tabAuto.addEventListener('click',()=>{
+    tabAuto.classList.add('active'); tabManual.classList.remove('active');
+  });
+
+  updateBalanceUI();
+  renderHistory();
+  updateAutoUI();
+})();
+</script>
+</body>
+</html>
